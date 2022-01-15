@@ -1,0 +1,56 @@
+<html>
+  <head>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/@picocss/pico@latest/css/pico.min.css"
+    />
+    <script
+      defer
+      src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"
+    ></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsonata/jsonata.min.js"></script>
+  </head>
+  <body>
+    <div x-data="warframeStatus()" x-init="fetchWarframeStatus()">
+      <template x-if="data">
+        <div>
+          <input x-model="searchParam" name="searchParam" type="text" />
+          <button type="button" @click="searchData()">Search</button>
+          <div id="tree-result" style="font-family: monospace; white-space:pre" x-html="searchResults">            
+          </div>
+        </div>
+      </template>
+    </div>
+  </body>
+</html>
+<script>
+  function warframeStatus() {
+    return {
+      data: null,
+      searchParam: "",
+      searchResults: "N/A",
+      isLoading: false,
+      fetchWarframeStatus() {
+        this.isLoading = true;
+        fetch("https://api.warframestat.us/pc")
+          .then((response) => {
+            if (!response.ok)
+              alert(
+                `Something went wrong: ${response.status} - ${response.statusText}`
+              );
+            this.isLoading = false;
+            return response.json();
+          })
+          .then((data) => {
+            this.data = data;
+            this.isLoading = false;
+          });
+      },
+      searchData() {
+        let result = jsonata("syndicateMissions.jobs").evaluate(this.data);
+
+        this.searchResults=JSON.stringify(result,null, '\t').replaceAll(new RegExp(this.searchParam,"gi"),'<mark>' + this.searchParam + '</mark>');
+      },
+    };
+  }
+</script>
