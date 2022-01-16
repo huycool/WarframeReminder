@@ -16,8 +16,11 @@
         <div>
           <input x-model="searchParam" name="searchParam" type="text" />
           <button type="button" @click="searchData()">Search</button>
-          <div id="tree-result" style="font-family: monospace; white-space:pre" x-html="searchResults">            
-          </div>
+          <div
+            id="tree-result"
+            style="font-family: monospace; white-space: pre"
+            x-html="searchResults"
+          ></div>
         </div>
       </template>
     </div>
@@ -49,8 +52,65 @@
       searchData() {
         let result = jsonata("syndicateMissions.jobs").evaluate(this.data);
 
-        this.searchResults=JSON.stringify(result,null, '\t').replaceAll(new RegExp(this.searchParam,"gi"),'<mark>' + this.searchParam + '</mark>');
+        this.searchResults = syntaxHighlight(JSON.stringify(result, null, "\t"), this.searchParam);
+        // .replaceAll(
+        //   new RegExp(this.searchParam, "gi"),
+        //   "<span style='color:purple'>" + this.searchParam + "</span>"
+        // ));        
       },
     };
   }
+
+  function syntaxHighlight(json,hilite) {
+    json = json
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+    return json.replace(
+      /("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g,
+      function (match) {
+        var cls = "number";
+        if (/^"/.test(match)) {
+          if (/:$/.test(match)) {
+            cls = "key";
+          } else {
+            cls = "string";
+          }
+        } else if (/true|false/.test(match)) {
+          cls = "boolean";
+        } else if (/null/.test(match)) {
+          cls = "null";
+        }
+          let ret = '<span class="' + cls + '">' + match + "</span>";
+          ret = ret.replaceAll(
+          new RegExp(hilite, "gi"),
+          "<mark>" + hilite + "</mark>"
+          );
+          return ret;
+      }
+    );
+  }
 </script>
+
+<style>
+  pre {
+    outline: 1px solid #ccc;
+    padding: 5px;
+    margin: 5px;
+  }
+  .string {
+    color: green;
+  }
+  .number {
+    color: darkorange;
+  }
+  .boolean {
+    color: blue;
+  }
+  .null {
+    color: magenta;
+  }
+  .key {
+    color: brown;
+  }
+</style>
