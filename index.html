@@ -15,7 +15,7 @@
       <template x-if="data">
         <div>
           <input x-model="searchParam" name="searchParam" type="text" />
-          <button type="button" @click="searchData()">Search</button>
+          <button type="button" @click="fetchWarframeStatus()">Search</button>
           <div
             id="tree-result"
             style="font-family: monospace; white-space: pre"
@@ -35,6 +35,7 @@
       isLoading: false,
       fetchWarframeStatus() {
         this.isLoading = true;
+        this.searchResults = "Loading...";
         fetch("https://api.warframestat.us/pc")
           .then((response) => {
             if (!response.ok)
@@ -46,22 +47,26 @@
           })
           .then((data) => {
             this.data = data;
+            let result = jsonata("syndicateMissions.jobs").evaluate(this.data);
+
+            this.searchResults = syntaxHighlight(
+              JSON.stringify(result, null, "\t"),
+              this.searchParam === '' ? 'zzzz' : this.searchParam
+            );
+
             this.isLoading = false;
           });
       },
       searchData() {
-        let result = jsonata("syndicateMissions.jobs").evaluate(this.data);
-
-        this.searchResults = syntaxHighlight(JSON.stringify(result, null, "\t"), this.searchParam);
         // .replaceAll(
         //   new RegExp(this.searchParam, "gi"),
         //   "<span style='color:purple'>" + this.searchParam + "</span>"
-        // ));        
+        // ));
       },
     };
   }
 
-  function syntaxHighlight(json,hilite) {
+  function syntaxHighlight(json, hilite) {
     json = json
       .replace(/&/g, "&amp;")
       .replace(/</g, "&lt;")
@@ -81,12 +86,12 @@
         } else if (/null/.test(match)) {
           cls = "null";
         }
-          let ret = '<span class="' + cls + '">' + match + "</span>";
-          ret = ret.replaceAll(
+        let ret = '<span class="' + cls + '">' + match + "</span>";
+        ret = ret.replaceAll(
           new RegExp(hilite, "gi"),
           "<mark>" + hilite + "</mark>"
-          );
-          return ret;
+        );
+        return ret;
       }
     );
   }
